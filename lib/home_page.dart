@@ -1,4 +1,16 @@
+import 'dart:html';
+import 'dart:io';
+
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
+import 'package:image_picker/image_picker.dart';
+import 'dart:typed_data';
+import 'dart:ui' as ui;
+
+
+import 'package:image_gallery_saver/image_gallery_saver.dart';
+
+
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -8,7 +20,28 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
-  
+  final ImagePicker picker = ImagePicker();
+XFile? photo;
+final GlobalKey _globalKey = GlobalKey();
+
+_saveLocalImage() async {
+    RenderRepaintBoundary boundary =
+        _globalKey.currentContext!.findRenderObject() as RenderRepaintBoundary;
+    ui.Image image = await boundary.toImage();
+    ByteData? byteData =
+        await (image.toByteData(format: ui.ImageByteFormat.png));
+    if (byteData != null) {
+      final result =
+          await ImageGallerySaver.saveImage(byteData.buffer.asUint8List());
+      print(result);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: const Text('save image success'),
+        ),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Center(
@@ -26,29 +59,44 @@ class _HomePageState extends State<HomePage> {
           ],
           leading: const Icon(Icons.menu, color: Colors.white,),
         ),
-        body:Column(
+        body: Column (
+          crossAxisAlignment: CrossAxisAlignment.center,
           children: [
-            Center(
-              child: Container(
-                padding: EdgeInsets.all(16),
-                  width: 300,
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                RepaintBoundary(
+                key: _globalKey,
+                child: Container(
+                  alignment: Alignment.center,
+                  // width: 300,
                   height: 300,
-                  decoration: BoxDecoration(
-                  color: Color.fromARGB(255, 123, 189, 150),
-                  borderRadius: BorderRadius.circular(20),
+                  color: Colors.blue,
+                  child: photo == null 
+                    ? const SizedBox() 
+                    :Image.file(File(photo!.path)),
                 ),
-                  child: Image.network('https://img.freepik.com/free-photo/pork-meatballs-dark-surface_1150-43612.jpg?t=st=1717473329~exp=1717476929~hmac=f440c4bcc6aae9ca7ef5dc685f45667e33f29c8af5f91ad7dd9b0731adb0636c&w=996'),
-                ),
+              ),
+                
+              ]
             ),
-                  Image.asset('assets/images/img1.jpg'),
-                  Center(
-                    child: CircleAvatar(
-                      radius: 50,
-                      backgroundImage: AssetImage('assets/images/img2.jpg'),
-                    ),
-                  )
-          ],
-        ),
+            SizedBox(height: 16,),
+            ElevatedButton (
+              onPressed: (){
+                _saveLocalImage();
+              }, 
+              child: const Text('Save to Galery', style: TextStyle(color: Colors.black),),
+              )
+            ] 
+            ), 
+              floatingActionButton: FloatingActionButton(
+              onPressed: () async {
+              photo = await picker.pickImage(source: ImageSource.camera);
+              setState(() {
+             });
+          },
+          backgroundColor: Color.fromARGB(255, 89, 194, 89),
+          child: const Icon(Icons.camera)),
       ),
     );
   }
